@@ -1,0 +1,46 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block extrahead %}{{ block.super }}
+<link rel="icon" type="image/png" href="{% static "assets/logo/Ren logo.png" %}" />
+{% endblock extrahead%}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+  html[data-theme="dark"],
+  html[data-theme="light"],
+:root {
+  //--body-bg
+  //--primary: #008aff;
+  //--body-quiet-color: #000;
+  --primary: rgb(0 138 255);
+  --header-bg: #008aff;
+  //--breadcrumbs-bg:rgba(66,2,93,0.8);
+  --breadcrumbs-bg:rgb(77 161 255);
+  --secondary: #42025d;
+  //--selected-row: rgb(134 189 255);
+  --link-fg: rgb(134 189 255);
+  --link-selected-fg: rgb(134 189 255);
+  --header-branding-color: #fff;
+  --accent: #fff;
+}
+#branding h1 {
+	font-weight: 701;
+	font-size: 2.5rem;
+}
+body{
+  background-image: url({%static 'wave_bg.svg'%});
+  background-repeat: repeat-y;
+  background-size: cover;
+  background-attachment: fixed;
+  background-position-y: bottom;
+  overflow-x: hidden;
+}
+#content h1{
+  color:black;
+}
+.actions,.paginator{
+  width:fit-content !important;
+}
+</style>
+{% endblock extrastyle%}

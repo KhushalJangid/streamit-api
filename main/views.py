@@ -12,8 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
-from account.models import User
-from main.models import Course
+from account.models import Subscription, User
+from main.models import Course, VideoAsset
 
 def parseGet(request,kw):
     _ = request.query_params.get(kw)
@@ -56,94 +56,45 @@ class Courses(APIView):
             query2 = Course.objects.filter(tags__icontains=keyword)
             query = query | query2
             if query:
-                data = {}
+                data  = [q.toJson() for q in query]
                 return Response(data)
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else:
             query = Course.objects.all()[ind:ind+30]
             if query:
-                data = {}
+                data  = [q.toJson() for q in query]
                 return Response(data)
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
-    # ? These actions will be performed through the admin site
-     
-    # def post(self, request):
-    #     try:
-    #         data = loads(request.data["data"])
-    #         token = request.headers["authorization"].split()[-1]
-    #         userID = Token.objects.get(key=token).user.id
-    #         userid = data["userid"]
-    #         if userID == userid:
-    #             title = data["title"]
-    #             category = data["category"]
-    #             subcategory = data["subcategory"]
-    #             price = data["price"]
-    #             state = data["state"]
-    #             city = data["city"]
-    #             locality = data["locality"]
-    #             description = data["description"]
-    #             tags = data["tags"]
-    #             imageList = request.FILES.getlist("images")
-    #             obj = Course.objects.create(title=title,
-    #                                         userid=userid,
-    #                                         category=category,
-    #                                         subcategory=subcategory,
-    #                                         price=price,
-    #                                         state=state,
-    #                                         city=city,
-    #                                         locality=locality,
-    #                                         description=description,
-    #                                         tags=tags,
-    #                                         )
-    #             if imageList == []:
-    #                 return Response({"error": "Product Images are required."}, status=status.HTTP_406_NOT_ACCEPTABLE)
-    #             else:
-    #                 path = []
-    #                 for file in imageList:
-    #                     name = main(file, userid)
-    #                     path.append("media/images/"+name)
-    #                 path = dumps(path)
-    #                 obj.images = path
-    #                 obj.save()
-    #             return Response({f"Ad Posted successfully !"}, status=status.HTTP_200_OK)
-    #         else:
-    #             return Response({"error": "User Id mismatch."}, status=status.HTTP_401_UNAUTHORIZED)
-    #     except Exception as e:
-    #         print(e)
-    #         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    # def put(self, request):
-    #     try:
-    #         data = loads(request.data["data"])
-    #         # print(data)
-    #         obj = Course.objects.get(id=int(data["id"]))
-    #         if obj.userid == int(data["userid"]):
-    #             return Response({f"Post updated {obj.title}!"}, status=status.HTTP_200_OK)
-    #         else:
-    #             return Response({"error": "You are not authorized to change this post."}, status=status.HTTP_401_UNAUTHORIZED)
-    #     except Exception as e:
-    #         print(e)
-    #         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    # def delete(self, request):
-    #     try:
-    #         data = request.data
-    #         obj = Course.objects.filter(id=data["id"])
-    #         if obj.userid == data["userid"]:
-    #             images = obj.images
-    #             images = loads(images)
-    #             for im in images:
-    #                 remove(im)
-    #             obj.delete()
-    #             return Response("Post deleted successfully !", status=status.HTTP_200_OK)
-    #         else:
-    #             return Response({"error": "You are not authorized to delete this post !"}, status=status.HTTP_401_UNAUTHORIZED)
-    #     except Exception as e:
-    #         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 @api_view(['get'])
-def list_videos(request,id):
-    pass
+@authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+def list_videos(request,course_id):
+    try:
+        course = Course.objects.get(id=course_id)
+        query = VideoAsset.objects.filter(course=course)
+        videos = [q.toJson() for q in query]
+        return Response(videos)
+    except Course.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['get'])
+@authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+def view_video(request,course_id,video_id):
+    try:
+        token = request.headers["authorization"].split()[-1]
+        user = Token.objects.get(key=token).user
+        course = Course.objects.get(id=course_id)
+        subscription = Subscription.objects.filter(user=user,course=course)
+        if subscription.exists():
+            query = VideoAsset.objects.get(id=video_id)
+            return Response({"dataUrl":query.master_pl.path})
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    except Course.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    except VideoAsset.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
