@@ -32,7 +32,7 @@ class WriteOnly(BasePermission):
     def has_permission(self, request, view):
         return request.method in ['POST']
     
-class Post(APIView):
+class Courses(APIView):
     # * allow get requests but authorize post/put/delete requests
     permission_classes = [IsAuthenticated | ReadOnly]
     authentication_classes = [TokenAuthentication]
@@ -45,7 +45,7 @@ class Post(APIView):
             try:
                 course_id = self.request.query_params.get("id")
                 course = Course.objects.get(id=course_id)
-                data = {}
+                data = course.toJson()
                 return Response(data)
             except Course.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
@@ -143,3 +143,7 @@ class Post(APIView):
     #             return Response({"error": "You are not authorized to delete this post !"}, status=status.HTTP_401_UNAUTHORIZED)
     #     except Exception as e:
     #         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['get'])
+def list_videos(request,id):
+    pass
