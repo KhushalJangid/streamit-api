@@ -36,5 +36,12 @@ class User(AbstractUser):
 class Subscription(models.Model):
     user = models.ForeignKey(to=User,on_delete=models.CASCADE)
     course = models.ForeignKey(to=Course,on_delete=models.CASCADE)
-    created = models.DateTimeField(default='django.utils.timezone.now')
+    created = models.DateTimeField(auto_now_add=True)
     expiry = models.DateTimeField(null=True)
+    
+class Key(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    otp = models.IntegerField(null=True,blank=True,unique=True)
+    key = models.CharField(null=True,blank=True, max_length=40)
+    expiry = models.DecimalField(null=True,blank=True,decimal_places=9,max_digits=20)
+    created = models.DateTimeField(auto_now_add=True)

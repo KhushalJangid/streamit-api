@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'video_transcoding',
+    # 'video_transcoding',
     'import_export',
     'account',
     'main',
@@ -57,10 +57,10 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'account.authentication.EmailBackend',
+    # 'account.authentication.EmailBackend',
     "django.contrib.auth.backends.ModelBackend"
     ]
-ADMIN_AUTHENTICATION_METHOD = 'account.authentication.EmailBackend'
+# ADMIN_AUTHENTICATION_METHOD = 'account.authentication.EmailBackend'
 
 ROOT_URLCONF = 'config.urls'
 AUTH_USER_MODEL = 'account.User'

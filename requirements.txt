@@ -24,6 +24,7 @@ pillow==10.3.0
 platformdirs==4.2.1
 prompt-toolkit==3.0.43
 pymediainfo==5.1.0
+pyotp==2.9.0
 pytz==2024.1
 PyYAML==6.0.1
 requests==2.25.1
