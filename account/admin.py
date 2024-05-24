@@ -88,16 +88,16 @@ class AccountResource(resources.ModelResource):
 
 class AccountAdmin(ExportActionMixin,UserAdmin):
     # add_form = UserCreateForm
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': (
-                  'email',
-                  'password1',
-                  'password2' 
-                  ),
-        }),
-    )
+    # add_fieldsets = (
+    #     (None, {
+    #         'classes': ('wide',),
+    #         'fields': (
+    #               'email',
+    #               'password1',
+    #               'password2' 
+    #               ),
+    #     }),
+    # )
     
     list_display=('id','first_name','last_name','email','last_login')
     search_fields = ["email","id","first_name"]
@@ -110,11 +110,11 @@ class AccountAdmin(ExportActionMixin,UserAdmin):
     resource_class = AccountResource
 
 
-class SessionAdmin(admin.ModelAdmin):
-    def _session_data(self, obj):
-        return obj.get_decoded()
-    list_display = ['session_key', '_session_data', 'expire_date']
+# class SessionAdmin(admin.ModelAdmin):
+#     def _session_data(self, obj):
+#         return obj.get_decoded()
+#     list_display = ['session_key', '_session_data', 'expire_date']
 
 
-admin.site.register(Session, SessionAdmin)
+# admin.site.register(Session, SessionAdmin)
 admin.site.register(User,AccountAdmin)

@@ -19,7 +19,7 @@ genders = {
 
 # Create your models here.
 class User(AbstractUser):
-    avatar = models.ImageField(upload_to='avatars/')
+    avatar = models.ImageField(upload_to='avatars/',null = True, blank=True)
     email=models.EmailField(max_length=200,unique=True)
     phone=models.CharField(max_length=10,null=True,blank=True)
     dob=models.DateField(null=True,blank=True)
