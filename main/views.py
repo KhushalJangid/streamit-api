@@ -38,10 +38,10 @@ class Courses(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get(self, format=None):
-        ind = self.request.query_params.get("index")
-        ind = int(ind) if ind is not None and ind != "" else 0
+        offset_index = self.request.query_params.get("index")
+        offset_index = int(offset_index) if offset_index is not None and offset_index != "" else 0
         filter = bool(self.request.query_params.get("filter"))
-        if ind == -1:
+        if offset_index == -1:
             try:
                 course_id = self.request.query_params.get("id")
                 course = Course.objects.get(id=course_id)
@@ -61,19 +61,31 @@ class Courses(APIView):
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            query = Course.objects.all()[ind:ind+30]
+            query = Course.objects.all()[offset_index:offset_index+30]
             if query:
                 data  = [q.toJson() for q in query]
                 return Response(data)
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
+            
+@api_view(['get'])
+@authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+def purchased_courses(request):
+    user = request.user
+    query = Subscription.objects.filter(user=user)
+    if query.exists():
+        courses = [q.course.toJson() for q in query]
+        return Response(courses)
+    else:
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['get'])
 @authentication_classes([TokenAuthentication])
 # @permission_classes([IsAuthenticated])
 def list_videos(request,course_id):
     try:
-        course = Course.objects.get(id=course_id)
+        course = Course.objects.get(uniqueName=course_id)
         query = VideoAsset.objects.filter(course=course)
         videos = [q.toJson() for q in query]
         return Response(videos)
@@ -85,8 +97,9 @@ def list_videos(request,course_id):
 # @permission_classes([IsAuthenticated])
 def view_video(request,course_id,video_id):
     try:
-        token = request.headers["authorization"].split()[-1]
-        user = Token.objects.get(key=token).user
+        # token = request.headers["authorization"].split()[-1]
+        # user = Token.objects.get(key=token).user
+        user = request.user
         course = Course.objects.get(id=course_id)
         subscription = Subscription.objects.filter(user=user,course=course)
         if subscription.exists():

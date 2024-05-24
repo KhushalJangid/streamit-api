@@ -5,5 +5,7 @@ from main import views
 
 urlpatterns = [
     path('courses', views.Courses.as_view()),
-    path('videos/list/<int:course_id>',views.list_videos)
+    path('mycourses/',views.purchased_courses),
+    path('videos/list/<uuid:course_id>',views.list_videos),
+    path('<uuid:course_id>/video/<uuid:video_id>',views.view_video),
 ]

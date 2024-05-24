@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.urls import path
-# from api import views
+from account import views
 
 
 urlpatterns = [
-    # path('user', views.UserView.as_view(), name='users'),
-    # path('token-auth', views.GetAuthToken, name='api-token-auth'),
+    path('user', views.UserView.as_view(), name='users'),
+    path('login', views.Login, name='api-token-auth'),
+    # path('verify', views.OtpVerify.as_view(), name='verify'),
     # path('activate/<uidb64>/<token>',activate,name='activate'),
 ]
