@@ -53,13 +53,17 @@ class UserView(APIView):
             '''This part of function is used to SignUp a user via Email.'''
             if "name" in data and "password" in data:
                 name = data["name"]
+                username = email.split('@')[0]
                 f_name = name.split()[0]
                 l_name = name.split()[-1]
+                phone = data.get('phone')
                 password = data["password"]
                 try:
                     user = User.objects.create(first_name=f_name,
                                                 last_name=l_name,
                                                 email=email,
+                                                username = username,
+                                                phone = phone,
                                                 is_active=False)
                     user.set_password(password)
                 except:
