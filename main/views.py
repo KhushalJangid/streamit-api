@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from json import dumps, loads
 from os import remove
 from datetime import datetime
@@ -13,7 +12,8 @@ from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from account.models import Subscription, User
-from main.models import Course, VideoAsset
+from main.models import Course, VideoAsset, Wishlist
+from django.db.utils import IntegrityError
 
 def parseGet(request,kw):
     _ = request.query_params.get(kw)
@@ -32,45 +32,46 @@ class WriteOnly(BasePermission):
     def has_permission(self, request, view):
         return request.method in ['POST']
     
-class Courses(APIView):
-    # * allow get requests but authorize post/put/delete requests
-    permission_classes = [IsAuthenticated | ReadOnly]
-    authentication_classes = [TokenAuthentication]
 
-    def get(self, format=None):
-        offset_index = self.request.query_params.get("index")
-        offset_index = int(offset_index) if offset_index is not None and offset_index != "" else 0
-        filter = bool(self.request.query_params.get("filter"))
-        if offset_index == -1:
-            try:
-                course_id = self.request.query_params.get("id")
-                course = Course.objects.get(id=course_id)
-                data = course.toJson()
-                return Response(data)
-            except Course.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+@api_view(['get'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def list_courses(request):
+    offset_index = request.query_params.get("index")
+    offset_index = int(offset_index) if offset_index is not None and offset_index != "" else 0
+    filter = bool(request.query_params.get("filter"))
+    if offset_index == -1:
+        try:
+            course_id = request.query_params.get("id")
+            course = Course.objects.get(id=course_id)
+            data = course.toJson()
+            videos = VideoAsset.objects.filter(course=course)
+            data["videos"] = [video.toJson() for video in videos]
+            return Response(data)
+        except Course.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-        elif filter:
-            keyword = parseGet(self.request,"search")
-            query = Course.objects.filter(title__icontains=keyword)
-            query2 = Course.objects.filter(tags__icontains=keyword)
-            query = query | query2
-            if query:
-                data  = [q.toJson() for q in query]
-                return Response(data)
-            else:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+    elif filter:
+        keyword = parseGet(request,"search")
+        query = Course.objects.filter(title__icontains=keyword)
+        query2 = Course.objects.filter(tags__icontains=keyword)
+        query = query | query2
+        if query:
+            data  = [q.toJson() for q in query]
+            return Response(data)
         else:
-            query = Course.objects.all()[offset_index:offset_index+30]
-            if query:
-                data  = [q.toJson() for q in query]
-                return Response(data)
-            else:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        query = Course.objects.all()[offset_index:offset_index+30]
+        if query:
+            data  = [q.toJson() for q in query]
+            return Response(data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
             
 @api_view(['get'])
 @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def purchased_courses(request):
     user = request.user
     query = Subscription.objects.filter(user=user)
@@ -82,7 +83,20 @@ def purchased_courses(request):
 
 @api_view(['get'])
 @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
+def purchase_course(request,course_id):
+    try:
+        course = Course.objects.get(uniqueName=course_id)
+        Subscription.objects.create(user=request.user,course=course)
+        return Response(status=status.HTTP_202_ACCEPTED)
+    except IntegrityError:
+        return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+    except Course.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['get'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def list_videos(request,course_id):
     try:
         course = Course.objects.get(uniqueName=course_id)
@@ -94,19 +108,60 @@ def list_videos(request,course_id):
     
 @api_view(['get'])
 @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
+def whishlist(request):
+    try:
+        items = Wishlist.objects.filter(user=request.user)
+        if items.exists():
+            courses = [item.course.toJson() for item in items ]
+            return Response(courses)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+    
+@api_view(['post'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def add_to_whishlist(request,courseId):
+    try:
+        course = Course.objects.get(uniqueName=courseId)
+        Wishlist.objects.create(user=request.user,course=course)
+        return Response(status=status.HTTP_200_OK)
+    except IntegrityError:
+        return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+    except Exception as e:
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+    
+    
+@api_view(['post'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def remove_from_whishlist(request,courseId):
+    try:
+        course = Course.objects.get(uniqueName=courseId)
+        Wishlist.objects.delete(user=request.user,course=course)
+        return Response(status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['get'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def view_video(request,course_id,video_id):
     try:
-        # token = request.headers["authorization"].split()[-1]
-        # user = Token.objects.get(key=token).user
         user = request.user
-        course = Course.objects.get(id=course_id)
-        subscription = Subscription.objects.filter(user=user,course=course)
-        if subscription.exists():
-            query = VideoAsset.objects.get(id=video_id)
-            return Response({"dataUrl":query.master_pl.path})
+        course = Course.objects.get(uniqueName=course_id)
+        if course.price != 0:
+            subscription = Subscription.objects.filter(user=user,course=course)
+            if subscription.exists():
+                query = VideoAsset.objects.get(uniqueName=video_id)
+                return Response({"dataUrl":query.raw.url})
+            else:
+                return Response({"error":"Course not purchased"},status=status.HTTP_401_UNAUTHORIZED)
         else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            query = VideoAsset.objects.get(uniqueName=video_id)
+            return Response({"dataUrl":query.raw.url})
     except Course.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     except VideoAsset.DoesNotExist:

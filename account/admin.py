@@ -118,3 +118,4 @@ class AccountAdmin(ExportActionMixin,UserAdmin):
 
 # admin.site.register(Session, SessionAdmin)
 admin.site.register(User,AccountAdmin)
+admin.site.register(Subscription)

@@ -19,7 +19,8 @@ class User(AbstractUser):
     
     def toJson(self)->dict:
         data = {
-            "avatar":self.avatar,
+            "id":self.id,
+            "avatar":self.avatar.url,
             "username":self.username,
             "first_name":self.first_name,
             "last_name":self.last_name,
@@ -38,6 +39,8 @@ class Subscription(models.Model):
     course = models.ForeignKey(to=Course,on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     expiry = models.DateTimeField(null=True)
+    class Meta:
+        unique_together = ('user', 'course',)
     
 class Key(models.Model):
     id = models.BigIntegerField(primary_key=True)

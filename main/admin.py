@@ -1,5 +1,5 @@
 from django.contrib import admin
-from main.models import VideoAsset,Course
+from main.models import VideoAsset,Course,Wishlist
 from import_export.admin import ExportActionMixin
 # Register your models here.
 
@@ -28,5 +28,6 @@ class VideoAdmin(ExportActionMixin,admin.ModelAdmin):
         return queryset.prefetch_related('course')
 
 
+admin.site.register(Wishlist)
 admin.site.register(Course,CourseAdmin)
 admin.site.register(VideoAsset,VideoAdmin)

@@ -72,7 +72,6 @@ class UserView(APIView):
                 send_otp(email=email, otp=OTP, name=name)
                 data = {
                     "token": token,
-                    "id": user.id
                 }
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
@@ -90,20 +89,18 @@ def Login(request):
 
     from django.contrib.auth import authenticate
     try:
-        map = loads(request.body)
-        password = map["password"]
+        body = loads(request.body)
+        password = body["password"]
         try:
-            user = User.objects.get(email=map["email"])
-            user = authenticate(username=user.username, password=password)
+            # user = User.objects.get(email=body["email"])
+            username = str(body['email']).split("@")[0]
+            user = authenticate(username=username, password=password)
             # print(type(user))
             if user is None:
                 return Response({"error":"Incorrect Password."},status=status.HTTP_400_BAD_REQUEST)
             token, created = Token.objects.get_or_create(user=user)
-            # print(token)
-            data = {
-                "token": token.key,
-                "id": user.id
-            }
+            data = user.toJson()
+            data["token"]=token.key
             return Response(data,status= status.HTTP_202_ACCEPTED)
         except Exception as e:
             print(e)
